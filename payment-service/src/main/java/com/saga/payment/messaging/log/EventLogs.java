@@ -1,0 +1,21 @@
+package com.saga.payment.messaging.log;
+
+import org.springframework.stereotype.Repository;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.UUID;
+
+@Repository
+public interface EventLogs extends CrudRepository<EventLog, UUID> {
+    default void proccessed(UUID eventId) {
+        save(new EventLog(eventId));
+    }
+
+    @Query("""
+            SELECT COUNT (cm.eventId)=1
+            FROM EventLog cm
+            WHERE cm.eventId = :eventId
+            """)
+        boolean isAlreadyProcessed(UUID eventId);
+}
