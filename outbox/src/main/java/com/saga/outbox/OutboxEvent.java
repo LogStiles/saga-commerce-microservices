@@ -3,13 +3,13 @@ package com.saga.outbox;
 import java.time.Instant;
 
 public interface OutboxEvent<ID, P> {
-    ID aggregateId();
+    ID getAggregateId();
 
-    String aggregateType();
+    String getAggregateType();
 
-    String type();
+    String getType();
 
-    Instant timestamp();
+    Instant getTimestamp();
 
-    P payload();
+    P getPayload();
 }

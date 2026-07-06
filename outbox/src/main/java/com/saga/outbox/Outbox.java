@@ -41,9 +41,9 @@ public class Outbox implements Serializable {
     Outbox(OutboxEvent<?,?> event) {
         requireNonNull(event, "event cannot be null.");
         this.id = UUID.randomUUID();
-        this.timestamp = requireNonNull(event.timestamp(), "issuedOn cannot be null.");
-        this.aggregateId = requireNonNull(event.aggregateType(), "aggregateType cannot be null.");
-        this.type = requireNonNull(event.type(), "type cannot be null");
-        this.payload = requireNonNull(event.payload(), "payload cannot be null");
+        this.timestamp = requireNonNull(event.getTimestamp(), "issuedOn cannot be null.");
+        this.aggregateId = requireNonNull(event.getAggregateType(), "aggregateType cannot be null.");
+        this.type = requireNonNull(event.getType(), "type cannot be null");
+        this.payload = requireNonNull(event.getPayload(), "payload cannot be null");
     }
 }

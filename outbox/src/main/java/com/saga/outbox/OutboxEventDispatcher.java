@@ -30,7 +30,7 @@ public class OutboxEventDispatcher {
     @Transactional(propagation = MANDATORY)
     public void on(OutboxEvent<?,?> event) {
         try (var session = entityManager.unwrap(Session.class)) {
-            logger.info("Exported event found for type {}", event.type());
+            logger.info("Exported event found for type {}", event.getType());
 
             //Unwrap to Hibernate session and save
             var outbox = new Outbox(event);
