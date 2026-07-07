@@ -3,7 +3,7 @@ package com.saga.order;
 import lombok.Builder;
 
 @Builder
-public record ItemOrderCmd(Long itemId,
+public record ItemOrderRequest(Long itemId,
                            Long quantity,
                            Long shopperId,
                            Long paymentDue,

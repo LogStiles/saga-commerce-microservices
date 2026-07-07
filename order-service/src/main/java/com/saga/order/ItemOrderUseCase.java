@@ -15,8 +15,8 @@ public class ItemOrderUseCase {
     private final TransactionManager transactionManager;
     private final Orders orders;
 
-    public Order make(ItemOrderCmd cmd) {
-        var order = orders.save(cmd.toOrder());
+    public Order makeOrder(ItemOrderRequest request) {
+        var order = orders.save(request.toOrder());
         transactionManager.begin(order);
         return order;
     }

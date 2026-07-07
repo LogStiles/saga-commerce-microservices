@@ -69,7 +69,11 @@ public class Order {
     }
 
     public Long getItemId() {
-        return this.itemId();
+        return this.itemId;
+    }
+
+    public Long getQuantity() {
+        return this.quantity;
     }
 
     public Long getShopperId() {
