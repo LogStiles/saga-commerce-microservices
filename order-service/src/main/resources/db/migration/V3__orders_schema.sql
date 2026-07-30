@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS reservation
+CREATE TABLE IF NOT EXISTS orders
 (
     id              UUID PRIMARY KEY        DEFAULT gen_random_uuid(),
     timestamp       TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
