@@ -1,0 +1,218 @@
+name: saga-commerce
+
+services:
+  # ---------------- Kafka cluster ----------------
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.1
+    container_name: zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [saga-net]
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: kafka
+    restart: unless-stopped
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    networks: [saga-net]
+
+  # ---------------- Debezium (Kafka Connect + CDC) ----------------
+  connect:
+    image: quay.io/debezium/connect:2.7
+    container_name: connect
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: connect
+      CONFIG_STORAGE_TOPIC: connect-configs
+      OFFSET_STORAGE_TOPIC: connect-offsets
+      STATUS_STORAGE_TOPIC: connect-status
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8083/connectors || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [saga-net]
+
+  # ---------------- Databases (one per service) ----------------
+  order-db:
+    image: postgres:16
+    container_name: order-db
+    restart: unless-stopped
+    command: ["postgres", "-c", "wal_level=logical"]
+    environment:
+      POSTGRES_USER: orderuser
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: orderdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./order-service/init-order.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orderuser -d orderdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [saga-net]
+
+  payment-db:
+    image: postgres:16
+    container_name: payment-db
+    restart: unless-stopped
+    command: ["postgres", "-c", "wal_level=logical"]
+    environment:
+      POSTGRES_USER: paymentuser
+      POSTGRES_PASSWORD: paymentsecret
+      POSTGRES_DB: paymentdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./payment-service/init-payment.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paymentuser -d paymentdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [saga-net]
+
+  inventory-db:
+    image: postgres:16
+    container_name: inventory-db
+    restart: unless-stopped
+    command: ["postgres", "-c", "wal_level=logical"]
+    environment:
+      POSTGRES_USER: inventoryuser
+      POSTGRES_PASSWORD: inventorysecret
+      POSTGRES_DB: inventorydb
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./inventory-service/init-inventory.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventoryuser -d inventorydb"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [saga-net]
+
+  # ---------------- Microservices ----------------
+  order-service:
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    container_name: order-service
+    restart: unless-stopped
+    depends_on:
+      order-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: order-db
+      POSTGRES_PORT: 5432
+      KAFKA_SERVERS: kafka:9092
+    ports:
+      - "8080:8080"
+    networks: [saga-net]
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    container_name: payment-service
+    restart: unless-stopped
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: payment-db
+      POSTGRES_PORT: 5432
+      KAFKA_SERVERS: kafka:9092
+    ports:
+      - "8081:8080"
+    networks: [saga-net]
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: inventory-service/Dockerfile
+    container_name: inventory-service
+    restart: unless-stopped
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: inventory-db
+      POSTGRES_PORT: 5432
+      KAFKA_SERVERS: kafka:9092
+    ports:
+      - "8082:8080"
+    networks: [saga-net]
+
+  # ---------------- One-shot: register Debezium outbox connectors ----------------
+  connector-setup:
+    image: curlimages/curl:8.10.1
+    container_name: connector-setup
+    depends_on:
+      connect:
+        condition: service_healthy
+    volumes:
+      - ./order-service/order-outbox-connector.json:/connectors/order.json:ro
+      - ./payment-service/payment-outbox-connector.json:/connectors/payment.json:ro
+      - ./inventory-service/inventory-outbox-connector.json:/connectors/inventory.json:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Waiting for Kafka Connect REST API...";
+        until curl -sf http://connect:8083/connectors > /dev/null; do sleep 3; done;
+        echo "Registering order-outbox-connector";
+        curl -sf -X PUT -H 'Content-Type: application/json' --data @/connectors/order.json     http://connect:8083/connectors/order-outbox-connector/config;
+        echo "Registering payment-outbox-connector";
+        curl -sf -X PUT -H 'Content-Type: application/json' --data @/connectors/payment.json   http://connect:8083/connectors/payment-outbox-connector/config;
+        echo "Registering inventory-outbox-connector";
+        curl -sf -X PUT -H 'Content-Type: application/json' --data @/connectors/inventory.json http://connect:8083/connectors/inventory-outbox-connector/config;
+        echo "All connectors registered.";
+    restart: "no"
+    networks: [saga-net]
+
+networks:
+  saga-net:
+    name: saga-commerce-net

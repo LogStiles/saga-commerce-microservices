@@ -1,1 +1,2 @@
-CREATE SCHEMA inventory;
+-- Runs on first inventory-db startup (mounted into docker-entrypoint-initdb.d).
+-- Schema objects are managed by Flyway in the public schema; nothing to do here.

@@ -39,7 +39,7 @@ public class ItemOrderEventHandler {
                 status = ItemOrderStatus.REJECTED;
             } else {
                 orderedItem.get().reserveItem(payload.quantity());
-                status = ItemOrderStatus.ORDERED;
+                status = ItemOrderStatus.PURCHASED;
             }
         } else {
             orderedItem.get().releaseItem(payload.quantity());
@@ -47,6 +47,6 @@ public class ItemOrderEventHandler {
         }
 
         eventPublisher.publishEvent(ItemOrderEvent.of(sagaId, status));
-        eventLogs.proccessed(eventId);
+        eventLogs.processed(eventId);
     }
 }

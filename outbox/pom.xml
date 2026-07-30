@@ -50,15 +50,11 @@
 	<build>
 		<plugins>
 			<plugin>
+				<!-- outbox is a plain library (no main class); skip Boot's repackage goal -->
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<excludes>
-						<exclude>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-						</exclude>
-					</excludes>
+					<skip>true</skip>
 				</configuration>
 			</plugin>
 			<plugin>

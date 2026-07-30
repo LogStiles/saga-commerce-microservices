@@ -7,6 +7,7 @@ import com.saga.order.Order;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,6 +21,7 @@ import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.web.servlet.support.ServletUriComponentsBuilder.fromCurrentRequest;
 
 @RestController
 @RequestMapping(path = "/v1/orders")
@@ -41,7 +43,7 @@ public class OrderController {
     ResponseEntity<?> recordOrder(@RequestBody ItemOrderRequest request) {
         var order = itemOrderUseCase.makeOrder(request);
         return ResponseEntity.accepted()
-                .location(fromCurrentRequest.path("/{id}").build(order.getOrderId().toString()))
+                .location(fromCurrentRequest().path("/{id}").build(order.getOrderId().toString()))
                 .header(HttpHeaders.RETRY_AFTER, "0.5")
                 .build();
     }
@@ -50,7 +52,7 @@ public class OrderController {
     ResponseEntity<?> status(@PathVariable UUID orderId) {
         var order = orders.findById(new Order.OrderId(orderId));
 
-        if (order.isPresent()) {
+        if (order.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError("Order Not Found"));
         }
 

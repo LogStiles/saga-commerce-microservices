@@ -20,7 +20,7 @@ public final class TransactionEvent implements OutboxEvent<UUID, JsonNode> {
     private final String aggregateType;
     private final String eventType;
 
-    private TransactionEvent(UUID transactionId, String aggregateType, String eventType, JsonNode payload) {
+    TransactionEvent(UUID transactionId, String aggregateType, String eventType, JsonNode payload) {
         this.transactionId = transactionId;
         this.aggregateType = aggregateType;
         this.eventType = eventType;

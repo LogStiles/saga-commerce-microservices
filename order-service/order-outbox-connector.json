@@ -2,7 +2,7 @@
   "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
   "plugin.name": "pgoutput",
   "tasks.max": "1",
-  "database.hostname": "reservation-db",
+  "database.hostname": "order-db",
   "database.port": "5432",
   "database.user": "orderuser",
   "database.password": "secret",

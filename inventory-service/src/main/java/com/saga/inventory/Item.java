@@ -21,7 +21,6 @@ public class Item {
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private ItemId id;
 
     private final Instant creationTime;

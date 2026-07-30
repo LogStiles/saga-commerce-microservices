@@ -1,0 +1,3 @@
+-- Runs on first order-db startup (mounted into docker-entrypoint-initdb.d).
+-- Schema objects are managed by Flyway in the public schema; nothing to do here.
+-- gen_random_uuid() is built into PostgreSQL 13+, so no extension is required.

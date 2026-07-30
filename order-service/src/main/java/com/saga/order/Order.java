@@ -3,6 +3,7 @@ package com.saga.order;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Builder;
@@ -17,7 +18,7 @@ import static java.util.Objects.requireNonNull;
 import static lombok.AccessLevel.PRIVATE;
 
 @Entity
-@Table(name = "order")
+@Table(name = "orders")
 @NoArgsConstructor(access = PRIVATE, force = true)
 public class Order {
 
@@ -52,10 +53,10 @@ public class Order {
                        Long paymentDue,
                        String creditCardNum) {
         this.id = new OrderId(UUID.randomUUID());
-        this.itemId = requireNotNull(itemId, "itemId cannot be null.");
-        this.quantity = requireNotNull(quantity, "quantity cannot be null.");
-        this.shopperId = requireNotNull(shopperId, "shopperId cannot be null.");
-        this.paymentDue = requireNotNull(paymentDue, "paymentDue cannot be null.");
+        this.itemId = requireNonNull(itemId, "itemId cannot be null.");
+        this.quantity = requireNonNull(quantity, "quantity cannot be null.");
+        this.shopperId = requireNonNull(shopperId, "shopperId cannot be null.");
+        this.paymentDue = requireNonNull(paymentDue, "paymentDue cannot be null.");
         this.creditCardNum = creditCardNum;
         this.status = Status.PENDING;
     }
@@ -89,11 +90,16 @@ public class Order {
     }
 
     public ObjectNode toTransactionPayload() {
-        return new ObjectMapper.createObjectNode()
+        // Keys are consumed downstream by the participants: the payment-service
+        // deserializes {purchaseId, shopperId, paymentAmount, creditCardNum, type}
+        // into its Payment entity, and the inventory-service reads {itemId, quantity, type}.
+        return new ObjectMapper().createObjectNode()
                     .put("orderId", this.id.toString())
+                    .put("purchaseId", this.id.toString())
                     .put("itemId", this.itemId)
                     .put("quantity", this.quantity)
                     .put("shopperId", this.shopperId)
+                    .put("paymentAmount", this.paymentDue)
                     .put("creditCardNum", creditCardNum);
     }
 }

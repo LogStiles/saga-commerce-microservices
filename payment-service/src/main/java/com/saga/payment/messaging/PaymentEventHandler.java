@@ -31,6 +31,6 @@ public class PaymentEventHandler {
         } 
         payments.save(event);
         eventPublisher.publishEvent(PaymentEvent.of(transactionId, event.paymentStatus()));
-        eventLogs.proccessed(eventId);
+        eventLogs.processed(eventId);
     }
 }

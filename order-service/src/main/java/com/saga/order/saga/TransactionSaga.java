@@ -88,6 +88,7 @@ public final class TransactionSaga extends Transaction {
         var next = TransactionStateOrder.next(state.getCurrentStep());
         if (next == null) {
             state.setCurrentStep(null);
+            return;
         }
 
         eventPublisher.publishEvent(new TransactionEvent(state.getId(), next.topic, REQUEST.name(), state.getPayload()));
@@ -100,6 +101,7 @@ public final class TransactionSaga extends Transaction {
         var prev = TransactionStateOrder.prev(state.getCurrentStep());
         if (prev == null) {
             state.setCurrentStep(null);
+            return;
         }
 
         var payload = ((ObjectNode) state.getPayload().deepCopy());
