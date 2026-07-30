@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.saga</groupId>
+    <artifactId>saga-commerce-microservices</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>saga-commerce-microservices</name>
+    <description>Event-driven e-commerce order processing (Saga orchestration) demo</description>
+
+    <!--
+        Aggregator-only parent: it wires the reactor build order (outbox is built and
+        installed before the services that depend on it). Each module keeps
+        spring-boot-starter-parent as its own parent for dependency management.
+    -->
+    <modules>
+        <module>outbox</module>
+        <module>order-service</module>
+        <module>payment-service</module>
+        <module>inventory-service</module>
+    </modules>
+
+</project>
