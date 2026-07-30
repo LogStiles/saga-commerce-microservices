@@ -20,7 +20,7 @@ public class KafkaOrderConsumer {
     private final String EVENT_TYPE = "eventType";
 
     private final Logger logger = LoggerFactory.getLogger(KafkaOrderConsumer.class);
-    private final OrderPlacementEventHandler OrderPlacementEventHandler;
+    private final OrderPlacementEventHandler orderPlacementEventHandler;
 
     @KafkaListener(topics = "${kafka.topic.saga.payment.inbox.events}", containerFactory = "paymentKLCFactory")
     void listen(@Header(RECEIVED_KEY) UUID transactionId,

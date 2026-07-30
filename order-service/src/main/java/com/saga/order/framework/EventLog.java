@@ -11,7 +11,7 @@ import java.time.Instant;
 import static lombok.AccessLevel.PRIVATE;
 
 @Entity
-@Table(name = "eventLog")
+@Table(name = "eventlog")
 @NoArgsConstructor(access = PRIVATE, force = true)
 public class EventLog {
     @Id

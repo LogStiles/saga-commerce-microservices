@@ -3,11 +3,13 @@ package com.saga.inventory.messaging;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.saga.outbox.OutboxEvent;
+
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 
-public final class ItemOrderEvent implements OutboxEvent<UUID, JsonNode> {
+public final class ItemOrderEvent implements OutboxEvent<String, JsonNode> {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private final UUID transactionId;
@@ -32,7 +34,9 @@ public final class ItemOrderEvent implements OutboxEvent<UUID, JsonNode> {
 
     @Override
     public String getAggregateType() {
-        return "item-order";
+        // Routed by the inventory Debezium connector to "inventory.outbox.events",
+        // which the order-service orchestrator listens on for the inventory step.
+        return "inventory";
     }
 
     @Override

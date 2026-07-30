@@ -2,5 +2,7 @@ package com.saga.inventory.messaging;
 
 
 public enum ItemOrderStatus {
-    ORDERED, REJECTED, CANCELLED;
+    // Names must match the order-service InventoryStatus enum so the orchestrator
+    // can deserialize the inventory response event.
+    PURCHASED, REJECTED, CANCELLED;
 }

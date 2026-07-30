@@ -11,9 +11,11 @@ import java.util.EnumSet;
 import java.util.UUID;
 
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -35,12 +37,12 @@ public class TransactionState {
 
     private String type;
 
-    @Type(JsonNodeBinaryType.class)
+    @JdbcTypeCode(SqlTypes.JSON)
     private JsonNode payload;
 
     private String currentStep;
 
-    @Type(JsonNodeBinaryType.class)
+    @JdbcTypeCode(SqlTypes.JSON)
     private ObjectNode stepStatus;
 
     @Enumerated(EnumType.STRING)

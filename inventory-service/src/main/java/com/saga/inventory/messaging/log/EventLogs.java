@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Repository
 public interface EventLogs extends CrudRepository<EventLog, UUID> {
-    default void proccessed(UUID eventId) {
+    default void processed(UUID eventId) {
         save(new EventLog(eventId));
     }
 

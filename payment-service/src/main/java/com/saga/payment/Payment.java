@@ -1,5 +1,6 @@
 package com.saga.payment;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.util.UUID;
@@ -13,6 +14,7 @@ import static lombok.AccessLevel.PRIVATE;
 @Table(name="payment")
 @NoArgsConstructor(access = PRIVATE, force = true)
 @ToString
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Payment {
     @Id
     public final UUID purchaseId;

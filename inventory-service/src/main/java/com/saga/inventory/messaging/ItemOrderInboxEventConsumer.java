@@ -38,6 +38,6 @@ public class ItemOrderInboxEventConsumer {
                 @Payload ItemOrderEventPayload payload) {
 
         logger.debug("Kafka message with key = {}, eventType = {}, payload = {}", transactionId, eventType, payload);
-        itemOrderEventHandler.onItemOrderEvent(UUID.fromString(eventId), transactionId, payload);
+        itemOrderEventHandler.onItemOrderEvent(transactionId, UUID.fromString(eventId), payload);
     }
 }
