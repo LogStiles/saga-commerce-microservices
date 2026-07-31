@@ -13,7 +13,9 @@ import com.saga.order.framework.TransactionState;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
-@Component
+// Explicit bean name: the default ("transactionManager") collides with the
+// PlatformTransactionManager that HibernateJpaConfiguration auto-configures.
+@Component("sagaTransactionManager")
 @RequiredArgsConstructor
 public class TransactionManager {
     private final ApplicationEventPublisher eventPublisher;
