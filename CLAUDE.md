@@ -22,6 +22,13 @@ Hibernate 7.4, PostgreSQL 16, Debezium 2.7, Flyway, Docker Compose. Consequences
 - JSONB columns map with `@JdbcTypeCode(SqlTypes.JSON)` on Jackson-3 `JsonNode`/`ObjectNode`/`Object`
   fields (Hibernate 7.4's `Jackson3JsonFormatMapper` handles them) — **not** Hypersistence types.
 - Jackson **annotations** still live in `com.fasterxml.jackson.annotation` (e.g. `@JsonIgnoreProperties`).
+- A deserialization target must **not** have `final` fields. Jackson 3 constructs the object first
+  (Lombok's `@NoArgsConstructor(force = true)` initialises finals to `null`) and then writes the
+  properties — and it cannot write a `final` field. There is **no error**: the field silently stays
+  `null` and you find out later, somewhere else. `Payment` hit exactly this — every `final` field
+  arrived null and only its one mutable field was populated, which then failed `persist()` on a
+  null `@Id`. Use non-final fields, or a `record` (filled via the canonical constructor, so finals
+  are fine there). Entities need non-final fields for Hibernate to materialise rows anyway.
 - Entity `@Table(name=...)` must be **lowercase, no camelCase** — Spring's naming strategy converts
   `eventLog` → `event_log`, which won't match the `eventlog` migrations. `order` is a reserved word,
   so the order table is `orders`.
@@ -126,3 +133,13 @@ participant must depend on the `outbox` module for this to work.
 Every consumer wraps deserializers in `ErrorHandlingDeserializer` and attaches a `DefaultErrorHandler`
 with a `DeadLetterPublishingRecoverer` (retry twice, 1s apart) → `<topic>-dlt` (spring-kafka 4.x
 default suffix; it was `.DLT` in 3.x).
+
+The DLT `KafkaTemplate` must serialize **both** shapes, via `DelegatingByTypeSerializer` (`byte[]`
+→ `ByteArraySerializer`, everything else → `JacksonJsonSerializer`). A *deserialization* failure
+recovers raw bytes, but a *listener* failure recovers the already-deserialized object. A
+`byte[]`-only template throws `ClassCastException` while publishing to the DLT, so the record can
+neither be processed nor parked and the consumer retries it forever — which also blocks the poll
+loop past `max.poll.interval.ms` and triggers endless rebalances.
+
+Consumers set `enable-auto-commit=false`: the listener container owns offsets. Auto-commit advances
+them on a timer regardless of listener outcome, defeating `DefaultErrorHandler`'s seek-based retries.
