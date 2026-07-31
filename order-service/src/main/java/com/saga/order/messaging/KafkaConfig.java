@@ -1,6 +1,7 @@
 package com.saga.order.messaging;
 
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
@@ -13,9 +14,13 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.support.serializer.DelegatingByTypeSerializer;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
+import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
 import org.springframework.util.backoff.FixedBackOff;
+
+import java.util.LinkedHashMap;
 
 @Configuration
 public class KafkaConfig {
@@ -54,15 +59,24 @@ public class KafkaConfig {
         return factory;
     }
 
+    // A failed *deserialization* recovers the raw bytes, but a failed *listener* recovers the
+    // already-deserialized object, so the DLT producer has to handle both. byte[] is matched
+    // first; anything else falls through to JSON. A byte[]-only template throws
+    // ClassCastException on listener failures, leaving the record stuck in an endless retry.
     @Bean
-    KafkaTemplate<String, byte[]> deadLetterKafkaTemplate(KafkaProperties props) {
-        var producerFactory = new DefaultKafkaProducerFactory<String, byte[]>(
-                props.buildProducerProperties(), new StringSerializer(), new ByteArraySerializer());
+    KafkaTemplate<String, Object> deadLetterKafkaTemplate(KafkaProperties props) {
+        var delegates = new LinkedHashMap<Class<?>, Serializer<?>>();
+        delegates.put(byte[].class, new ByteArraySerializer());
+        delegates.put(Object.class, new JacksonJsonSerializer<>());
+
+        var producerFactory = new DefaultKafkaProducerFactory<String, Object>(
+                props.buildProducerProperties(), new StringSerializer(),
+                new DelegatingByTypeSerializer(delegates, true));
         return new KafkaTemplate<>(producerFactory);
     }
 
     @Bean
-    DefaultErrorHandler kafkaErrorHandler(KafkaTemplate<String, byte[]> deadLetterKafkaTemplate) {
+    DefaultErrorHandler kafkaErrorHandler(KafkaTemplate<String, Object> deadLetterKafkaTemplate) {
         var recoverer = new DeadLetterPublishingRecoverer(deadLetterKafkaTemplate);
         return new DefaultErrorHandler(recoverer, new FixedBackOff(1000L, 2));
     }
