@@ -1,0 +1,10 @@
+# Normalize text files in the repo; check out with the platform's native endings.
+* text=auto
+
+# Shell scripts must keep LF and stay executable — they run inside Linux containers.
+mvnw text eol=lf
+*.sh text eol=lf
+
+# Windows-only scripts keep CRLF.
+mvnw.cmd text eol=crlf
+*.bat text eol=crlf

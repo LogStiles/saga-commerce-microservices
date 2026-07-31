@@ -4,6 +4,7 @@ WORKDIR /workspace
 
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
+RUN chmod +x mvnw
 COPY outbox/pom.xml outbox/pom.xml
 COPY order-service/pom.xml order-service/pom.xml
 COPY payment-service/pom.xml payment-service/pom.xml
