@@ -17,13 +17,13 @@ import static lombok.AccessLevel.PRIVATE;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Payment {
     @Id
-    public final UUID purchaseId;
+    public UUID purchaseId;
 
-    public final Integer shopperId;
+    public Integer shopperId;
 
-    public final Long paymentAmount;
+    public Long paymentAmount;
 
-    public final String creditCardNum;
+    public String creditCardNum;
 
     @Enumerated(EnumType.STRING)
     public PaymentRequestType type;
