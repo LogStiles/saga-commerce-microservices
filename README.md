@@ -52,7 +52,7 @@ Flyway · Docker Compose. Modules: `outbox` (shared library), `order-service`, `
 docker compose up --build
 ```
 
-This starts Zookeeper + Kafka, Kafka Connect (Debezium), three Postgres databases, the three
+This starts Kafka (KRaft mode — no ZooKeeper), Kafka Connect (Debezium), three Postgres databases, the three
 services, and a one-shot `connector-setup` container that registers the Debezium connectors.
 
 Service ports: order `8080`, payment `8081`, inventory `8082` (all under context path `/api`).
