@@ -97,6 +97,33 @@ curl -i -X POST http://localhost:8080/api/v1/orders \
   -H 'Content-Type: application/json' --data @e2e/insufficient-stock.json
 ```
 
+### Verify the compensation actually ran
+
+An order status of `FAILED` only says the saga ended badly — it doesn't prove the compensating
+transaction undid the earlier step. Check the participants' own state for that.
+
+```bash
+docker exec -it payment-db psql -U paymentuser -d paymentdb -c "select purchase_id, payment_amount, type from payment;"
+```
+
+`type` is the evidence:
+
+| Scenario | `type` | Why |
+|---|---|---|
+| happy path | `REQUEST` | payment taken, never undone |
+| card ends `1234` | `REQUEST` | failed at step one, so there was nothing to compensate |
+| item 3, no stock | `CANCEL` | payment succeeded, inventory rejected, saga walked **backwards** and undid it |
+
+A `CANCEL` row is the compensating transaction. If the insufficient-stock order shows `REQUEST`,
+the saga aborted without compensating and the payment was never released.
+
+```bash
+docker exec -it inventory-db psql -U inventoryuser -d inventorydb -c "select id, name, stock_amount, creation_time from inventory;"
+```
+
+Stock drops only for orders that reached `SUCCEED` — ordering 2 of item 1 leaves it at 23. A
+rejected order must leave every row untouched, and item 3 stays at 0.
+
 ## Useful commands
 
 ```bash
