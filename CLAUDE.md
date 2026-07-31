@@ -124,4 +124,5 @@ participant must depend on the `outbox` module for this to work.
 ### Dead-letter queues
 
 Every consumer wraps deserializers in `ErrorHandlingDeserializer` and attaches a `DefaultErrorHandler`
-with a `DeadLetterPublishingRecoverer` (retry twice, 1s apart) → `<topic>.DLT`.
+with a `DeadLetterPublishingRecoverer` (retry twice, 1s apart) → `<topic>-dlt` (spring-kafka 4.x
+default suffix; it was `.DLT` in 3.x).

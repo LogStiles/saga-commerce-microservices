@@ -27,7 +27,7 @@ reskinned from hotel booking to online-store ordering.
 - **Idempotent consumers**: each service records processed event ids in an `eventlog` table and
   skips duplicates.
 - **Dead-letter queues**: each consumer retries a failing/poison record twice (1s apart), then
-  routes it to `<topic>.DLT` so the main flow keeps moving.
+  routes it to `<topic>-dlt` so the main flow keeps moving.
 - Each service owns its **own Postgres database**.
 
 ### Kafka topic contract
@@ -38,7 +38,7 @@ reskinned from hotel booking to online-store ordering.
 | order → inventory | `inventory` | `inventory.inbox.events` |
 | payment → order | `payment` | `payment.outbox.events` |
 | inventory → order | `inventory` | `inventory.outbox.events` |
-| poison messages | — | `<topic>.DLT` |
+| poison messages | — | `<topic>-dlt` |
 
 ## Tech
 
@@ -101,7 +101,7 @@ curl -i -X POST http://localhost:8080/api/v1/orders \
 
 ```bash
 scripts/list-kafka-topics.sh                          # list topics
-scripts/consume-kafka-topic.sh payment.inbox.events   # tail a topic (or a *.DLT topic)
+scripts/consume-kafka-topic.sh payment.inbox.events   # tail a topic (or a *-dlt topic)
 ./register-connectors.sh                              # re-register connectors after edits
 ```
 
