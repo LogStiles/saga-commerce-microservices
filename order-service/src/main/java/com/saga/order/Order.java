@@ -17,13 +17,17 @@ import java.util.UUID;
 import static java.util.Objects.requireNonNull;
 import static lombok.AccessLevel.PRIVATE;
 
+/**
+ * Order represents a purchase sent in by a consumer
+ * Contains a unique identifier so it can be stored on the orders table, the status of the order, and information about the order submitted by the consumer
+ */
 @Entity
 @Table(name = "orders")
 @NoArgsConstructor(access = PRIVATE, force = true)
 public class Order {
 
     public enum Status {
-        PENDING, SUCCEED, FAILED, CANCELED, REFUND
+        PENDING, SUCCEED, FAILED
     }
 
     @Embeddable
@@ -43,8 +47,8 @@ public class Order {
     private Status status;
 
     private Long shopperId;
-    public Long paymentDue;
-    public String creditCardNum;
+    private Long paymentDue;
+    private String creditCardNum;
 
     @Builder
     public Order(Long itemId,
@@ -90,9 +94,10 @@ public class Order {
     }
 
     public ObjectNode toTransactionPayload() {
-        // Keys are consumed downstream by the participants: the payment-service
-        // deserializes {purchaseId, shopperId, paymentAmount, creditCardNum, type}
-        // into its Payment entity, and the inventory-service reads {itemId, quantity, type}.
+        /* Keys are consumed downstream by the participants: the payment-service
+           deserializes {purchaseId, shopperId, paymentAmount, creditCardNum, type}
+           into its Payment entity, and the inventory-service reads {itemId, quantity, type}. 
+        */
         return new ObjectMapper().createObjectNode()
                     .put("orderId", this.id.toString())
                     .put("purchaseId", this.id.toString())

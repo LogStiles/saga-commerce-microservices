@@ -19,10 +19,13 @@ import java.util.UUID;
 
 import static org.springframework.kafka.support.KafkaHeaders.RECEIVED_KEY;
 
+/**
+ * ItemOrderInboxEventConsumer listens to inventory-service's inbox for messages, logs them, and calls the ItemOrderEventHandler to handle them
+ */
 @KafkaListener(
     topics = "${kafka.topic.inbox.events.name}",
     groupId = "${spring.kafka.consumer.group-id}",
-    containerFactory = "kafkaListenerContainerFactory"
+    containerFactory = "kafkaListenerContainerFactory" //same name as ConcurrentKafkaListenerContainerFactory returning method in KafkaConfig.java
 )
 @Component
 @RequiredArgsConstructor

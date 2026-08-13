@@ -17,7 +17,8 @@ import java.time.Instant;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Entity class representing an Outbox Event for storing persistently
+ * Outbox is an Entity class representing an Outbox Event row for storing persistently
+ * 
  */
 @Entity
 @Table(name = "outboxevent")

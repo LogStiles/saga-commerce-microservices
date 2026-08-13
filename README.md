@@ -21,9 +21,7 @@ reskinned from hotel booking to online-store ordering.
              (fails if card ends in 1234)         (REJECTED if stock insufficient)
 ```
 
-- **Transactional outbox + Debezium CDC**: every service writes events to a local `outboxevent`
-  table in the same DB transaction as its business change. Debezium tails each DB's WAL and the
-  outbox `EventRouter` SMT publishes the rows to Kafka — no dual-write, no lost events.
+- **Transactional outbox + Debezium CDC**: When an event occurs in one of the services, it is not just written to the relevant business table but also written to an outbox table in the service's db in the same db transaction. When the outbox row is persisted, Debezium will detect this in Postgres's Write Ahead Log (WAL). Debezium's EventRouter will then automatically send it to the Kafka topic defined in the service's `*-outbox-connector.json` by the line `transforms.outbox.route.topic.replacement`: `${routedByValue}.inbox.events` or `${routedByValue}.outbox.events`. `order-service` only uses `inbox.events`, and both `payment-service` and `inventory-service` use `outbox.events`. `${routedByValue}` is the `aggregateType` column value, and it's the same in both directions.
 - **Idempotent consumers**: each service records processed event ids in an `eventlog` table and
   skips duplicates.
 - **Dead-letter queues**: each consumer retries a failing/poison record twice (1s apart), then

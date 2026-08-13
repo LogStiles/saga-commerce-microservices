@@ -11,6 +11,9 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 
+/**
+ * TransactionEvent is an implementation of OutboxEvent that holds metadata and business parameters about transactions
+ */
 public final class TransactionEvent implements OutboxEvent<UUID, JsonNode> {
     private static final ObjectMapper mapper = new ObjectMapper();
 

@@ -18,6 +18,6 @@ public class ItemOrderUseCase {
     public Order makeOrder(ItemOrderRequest request) {
         var order = orders.save(request.toOrder());
         transactionManager.begin(order);
-        return order;
+        return order; //@Transactional annotation so staged writes to the orders table, the transactionState table, and order-service's outboxevent table occur at end of method to ensure atomicity
     }
 }

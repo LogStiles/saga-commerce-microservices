@@ -27,6 +27,12 @@ import java.util.LinkedHashMap;
 
 import lombok.Setter;
 
+/**
+ * KafkaConfig serves multiple purposes.
+ * It creates our two inventory-service's Kafka topics using properties defined in application.properties.
+ * It builds the consumer pipeline used by ItemOrderInboxEventConsumer to handle incoming ItemOrderEventPayload objects.
+ * It builds the DLT pipeline with the beans deadLetterKafkaTemplate and kafkaErrorHandler.
+ */
 @Configuration
 @EnableKafka
 class KafkaConfig {
@@ -39,17 +45,18 @@ class KafkaConfig {
     }
 
     @Bean
-    @ConfigurationProperties(prefix = "kafka.topic.inbox.events")
+    @ConfigurationProperties(prefix = "kafka.topic.inbox.events") //prefix refers to a property in application.properties
     KafkaTopic inventoryInboxTopicProps() {
-        return new KafkaTopic();
+        return new KafkaTopic(); //use Lombok @Setter to populate the fields of the KafkaTopic with values defined in application.properties
     }
 
     @Bean
-    @ConfigurationProperties(prefix = "kafka.topic.outbox.events")
+    @ConfigurationProperties(prefix = "kafka.topic.outbox.events") //prefix refers to a property in application.properties
     KafkaTopic inventoryOutboxTopicProps() {
-        return new KafkaTopic();
+        return new KafkaTopic(); //use Lombok @Setter to populate the fields of the KafkaTopic with values defined in application.properties
     }
-
+    
+    //topics are auto-created by Spring Kafka's KafkaAdmin detecting NewTopic and @Bean
     @Bean
     NewTopic inventoryInboxTopic() {
         var props = inventoryInboxTopicProps();
@@ -64,7 +71,7 @@ class KafkaConfig {
 
     @Bean
     ConsumerFactory<String, ItemOrderEventPayload> consumerFactory(KafkaProperties props) {
-        var valueDeserializer = new ErrorHandlingDeserializer<>(new JacksonJsonDeserializer<>(ItemOrderEventPayload.class, false));
+        var valueDeserializer = new ErrorHandlingDeserializer<>(new JacksonJsonDeserializer<>(ItemOrderEventPayload.class, false)); //false means we always deserialize into ItemOrderEventPayload.class and ignore type-info headers
         var keyDeserializer = new ErrorHandlingDeserializer<>(new StringDeserializer());
         return new DefaultKafkaConsumerFactory<>(props.buildConsumerProperties(), keyDeserializer, valueDeserializer);
     }

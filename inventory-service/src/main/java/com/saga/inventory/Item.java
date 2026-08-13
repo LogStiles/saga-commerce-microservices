@@ -8,6 +8,9 @@ import static lombok.AccessLevel.PRIVATE;
 import java.io.Serializable;
 import java.time.Instant;
 
+/**
+ * Item contains the metadata and relevant business information for an item
+ */
 @Entity
 @Table(name = "inventory")
 @NoArgsConstructor(access = PRIVATE, force = true)

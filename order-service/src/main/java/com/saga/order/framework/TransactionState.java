@@ -25,6 +25,9 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.NoArgsConstructor;
 
+/**
+ * TransactionState holds the metadata of a multi-step TransactionSaga including a unique identifier, the location of the transaction in the state machine, and the health of the transaction
+ */
 @Entity
 @Table(name = "transactionstate")
 @NoArgsConstructor(access = PRIVATE, force = true)
@@ -33,7 +36,8 @@ public class TransactionState {
     private UUID id;
 
     @Version
-    private int version;
+    private int version; //transactions change as the status and stepstatus update, version keeps track of them
+    // Also serves as optimistic locking conflict detection, Hibernate will throw an OptimisticLockException if two writes to the same id are concurrent
 
     private String type;
 
@@ -80,8 +84,10 @@ public class TransactionState {
         this.stepStatus.put(step, transactionStepStatus.name());
     }
 
+    // Computes the status of the transaction as a whole by looking at the status of the transaction's steps
+    // TransactionStatus should never be set by hand, the logic here works for all current and future situations and avoids introducing subtle failure points across the api
     public void advanceTransactionStatus() {
-        var statuses = stepStatusToSet();
+        var statuses = stepStatusToSet(); //convert all step statuses to a single set
 
         if (EnumSet.of(SUCCEEDED).containsAll(statuses)) {
             transactionStatus = TransactionStatus.FINISHED;      // every step succeeded
