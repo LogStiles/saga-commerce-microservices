@@ -37,9 +37,9 @@ public class ItemOrderEventHandler {
         var orderedItem = inventory.findById(new Item.ItemId(payload.itemId()));
 
         final ItemOrderStatus status; //use business logic to determine ItemOrderStatus
-        if (payload.isRequest() || orderedItem.isEmpty()) {
-            if (orderedItem.isEmpty() || !orderedItem.get().isAvailableInQuantity(payload.quantity())) { //does item exist and does item have enough in stock for the ItemOrderEventPayload
-                status = ItemOrderStatus.REJECTED;
+        if (payload.isRequest() || orderedItem.isEmpty()) { //orderedItem.isEmpty() is a safety guard. If the payload is CANCEL but the item doesn't exist, it will be REJECTED instead of releasing items that don't exist.
+            if (orderedItem.isEmpty() || !orderedItem.get().isAvailableInQuantity(payload.quantity())) { //Another safety guard. If orderedItem.isEmpty() the OR statement short-circuits before orderedItem.get() is called and the payload will be REJECTED.
+                status = ItemOrderStatus.REJECTED; //item doesn't exist or doesn't exist in enough quantity to serve the order
             } else {
                 orderedItem.get().reserveItem(payload.quantity()); //happy path, remove item from stock
                 status = ItemOrderStatus.PURCHASED;

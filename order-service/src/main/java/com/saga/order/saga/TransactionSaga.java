@@ -118,7 +118,8 @@ public final class TransactionSaga extends Transaction {
     }
 
     /*
-        Something went wrong and we have to perform compensating transactions
+        goBack() is called when the current step has either had a non-recoverable failure or has finished compensating 
+        Something went wrong and we have to perform compensating transactions for previous successful steps
     */
     private void goBack() {
         var prev = TransactionStateOrder.prev(state.getCurrentStep());

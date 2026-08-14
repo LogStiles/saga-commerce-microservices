@@ -26,6 +26,10 @@ import static lombok.AccessLevel.PRIVATE;
 @NoArgsConstructor(access = PRIVATE, force = true)
 public class Order {
 
+    /**
+     * Status is the consumer's window into the TransactionSaga
+     * When the TransactionSaga is still ongoing they only see PENDING, they don't know if it is aborting or on the happy path.
+     */
     public enum Status {
         PENDING, SUCCEED, FAILED
     }

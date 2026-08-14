@@ -54,7 +54,7 @@ public class Payment {
             }
         }
         else {
-            status = PaymentStatus.CANCELLED;
+            status = PaymentStatus.CANCELLED; //CANCELLED has no business logic associated with it. It only makes the compensating transaction observable in payment.outbox.events
         }
         return status;
     }
