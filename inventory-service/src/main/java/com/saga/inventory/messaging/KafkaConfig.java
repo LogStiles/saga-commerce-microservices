@@ -69,6 +69,8 @@ class KafkaConfig {
         return new NewTopic(props.name, props.partitions, props.replicas);
     }
 
+    //ErrorHandlingDeserializer prevents malformed/garbage Kafka messages from crashing the service
+    //Errors are handled by our kafkaErrorHandler @Bean found at the bottom of the class
     @Bean
     ConsumerFactory<String, ItemOrderEventPayload> consumerFactory(KafkaProperties props) {
         var valueDeserializer = new ErrorHandlingDeserializer<>(new JacksonJsonDeserializer<>(ItemOrderEventPayload.class, false)); //false means we always deserialize into ItemOrderEventPayload.class and ignore type-info headers
@@ -102,6 +104,10 @@ class KafkaConfig {
         return new KafkaTemplate<>(producerFactory);
     }
 
+    //Handles errors for the ConcurrentKafkaListenerContainer. A safety net not just for Kafka-related errors, but any kind of exception thrown in its call-stack
+    //Retries twice before passing it off to DLT handling.
+    //Bounded retries prevent the consumer's poll loop from going over max.poll.interval.ms, going over would stop polling and the broker would think the consumer is dead, which would cause endless rebalances
+    //Retry budget only applies to listener failures, parsing errors on malformed jsons are automatically sent to DeadLetterPublishingRecoverer
     @Bean
     DefaultErrorHandler kafkaErrorHandler(KafkaTemplate<String, Object> deadLetterKafkaTemplate) {
         var recoverer = new DeadLetterPublishingRecoverer(deadLetterKafkaTemplate);
