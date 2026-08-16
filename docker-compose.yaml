@@ -3,6 +3,8 @@ name: saga-commerce
 services:
   # ---------------- Kafka (KRaft mode — no ZooKeeper) ----------------
   # Single node in combined mode: this one process is both broker and controller.
+  # Kafka connects the microservices together so they can communicate.
+  # Kafka is agnostic about how many people publish to a topic, so we can scale producers independently of consumers without Kafka breaking.
   kafka:
     image: confluentinc/cp-kafka:7.7.1
     container_name: kafka
@@ -36,6 +38,7 @@ services:
     networks: [saga-net]
 
   # ---------------- Debezium (Kafka Connect + CDC) ----------------
+  # Runs in a separate JVM. Reads the WALs of Postgres and sends the payloads to Kafka when needed.
   connect:
     image: quay.io/debezium/connect:2.7
     container_name: connect
@@ -64,6 +67,9 @@ services:
     networks: [saga-net]
 
   # ---------------- Databases (one per service) ----------------
+  # Three Postgres instances have lower coupling than one shared instance. We can scale databases up independently from each other as needed in a production environment.
+  # Allows each service to have its own different and changing requirements for its data without coordinating a migration across every service
+  # Also prevents concurrency issues. Microservices don't wait for long transactions involving other microservices to finish.
   order-db:
     image: postgres:16
     container_name: order-db
@@ -125,6 +131,8 @@ services:
     networks: [saga-net]
 
   # ---------------- Microservices ----------------
+  # Microservices handle the business logic of an order. 
+  # Separating transaction steps into different services allows us to change things about each part or even swap services out entirely as needed (maybe orders from a different country have different logic for payments)
   order-service:
     build:
       context: .
@@ -183,6 +191,7 @@ services:
     networks: [saga-net]
 
   # ---------------- One-shot: register Debezium outbox connectors ----------------
+  # Runs when the system starts up and Kafka Connect is online to register the outbox-connectors so they can start doing CDC
   connector-setup:
     image: curlimages/curl:8.10.1
     container_name: connector-setup

@@ -13,6 +13,9 @@ import org.springframework.stereotype.Component;
 
 import static org.springframework.kafka.support.KafkaHeaders.RECEIVED_KEY;
 
+/**
+ * KafkaOrderConsumer takes messages from the kafka topics associated with each transaction step and delegates them to their equivalent method in OrderPlacementEventHandler
+ */
 @Component
 @RequiredArgsConstructor
 public class KafkaOrderConsumer {
@@ -22,7 +25,7 @@ public class KafkaOrderConsumer {
     private final Logger logger = LoggerFactory.getLogger(KafkaOrderConsumer.class);
     private final OrderPlacementEventHandler orderPlacementEventHandler;
 
-    @KafkaListener(topics = "${kafka.topic.saga.payment.inbox.events}", containerFactory = "paymentKLCFactory")
+    @KafkaListener(topics = "${kafka.topic.saga.payment.inbox.events}", containerFactory = "paymentKLCFactory") //same name as ConcurrentKafkaListenerContainerFactory returning method in KafkaConfig.java
     void listen(@Header(RECEIVED_KEY) UUID transactionId,
                 @Header(EVENT_ID) String eventId,
                 @Header(EVENT_TYPE) String eventType,
@@ -31,7 +34,7 @@ public class KafkaOrderConsumer {
         orderPlacementEventHandler.onPaymentEvent(transactionId, UUID.fromString(eventId), payload);
     }
 
-    @KafkaListener(topics = "${kafka.topic.saga.inventory.inbox.events}", containerFactory = "inventoryKLCFactory")
+    @KafkaListener(topics = "${kafka.topic.saga.inventory.inbox.events}", containerFactory = "inventoryKLCFactory") //same name as ConcurrentKafkaListenerContainerFactory returning method in KafkaConfig.java
     void listen(@Header(RECEIVED_KEY) UUID transactionId,
                 @Header(EVENT_ID) String eventId,
                 @Header(EVENT_TYPE) String eventType,

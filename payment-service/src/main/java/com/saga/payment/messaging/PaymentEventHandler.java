@@ -14,6 +14,9 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.UUID;
 
+/**
+ * PaymentEventHandler receives messages from PaymentInboxEventConsumer at least once and ensures they are processed with idempotency
+ */
 @Component
 @Transactional
 @RequiredArgsConstructor
@@ -25,10 +28,11 @@ public class PaymentEventHandler {
     private final Payments payments;
 
     public void onPaymentEvent(UUID eventId, UUID transactionId, Payment event) {
-        if (eventLogs.isAlreadyProcessed(eventId)) {
+        if (eventLogs.isAlreadyProcessed(eventId)) { //Idempotency check. If eventId is already found in eventLogs, do nothing
             logger.info("Event with UUID {} was already retrieved.", eventId);
             return;
         } 
+        // @Transactional enforces that all 3 of these writes have atomicity
         payments.save(event);
         eventPublisher.publishEvent(PaymentEvent.of(transactionId, event.paymentStatus()));
         eventLogs.processed(eventId);

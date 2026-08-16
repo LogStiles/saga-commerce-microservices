@@ -42,12 +42,20 @@ public class OrderController {
     @PostMapping(consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     ResponseEntity<?> recordOrder(@RequestBody ItemOrderRequest request) {
         var order = itemOrderUseCase.makeOrder(request);
+        //returns a 202 with an empty body and the order's generated id in the location header
+        //status is 202 and not 201 because the id is created immediately but the outcome isn't, as payment-service and inventory-service handle processing asynchronously
         return ResponseEntity.accepted()
                 .location(fromCurrentRequest().path("/{id}").build(order.getOrderId().toString()))
-                .header(HttpHeaders.RETRY_AFTER, "0.5")
+                .header(HttpHeaders.RETRY_AFTER, "2") //"2" matches FixedBackOff(1000L, 2) in KafkaConfig.java's DLT processing
                 .build();
     }
 
+    /**
+     * Polls orders table given an orderId
+     * Used by consumers to learn the status of an order (PENDING, SUCCEED, FAILED)
+     * @param orderId primary key on the orders table
+     * @return if the primary key exists returns a 200 and the row associated with the primary key, 404 ApiError otherwise
+     */
     @GetMapping(path="/{orderId}", produces = APPLICATION_JSON_VALUE)
     ResponseEntity<?> status(@PathVariable UUID orderId) {
         var order = orders.findById(new Order.OrderId(orderId));

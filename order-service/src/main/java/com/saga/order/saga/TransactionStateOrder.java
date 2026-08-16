@@ -1,5 +1,10 @@
 package com.saga.order.saga;
 
+/**
+ * TransactionStateOrder maintains what order steps/aggregateTypes for a transaction occur in
+ * All TransactionSagas start with a PAYMENT, then go to INVENTORY, and then finish
+ * If you were to add another step to all transactions you'd start by adding another case here and changing the revelant next() and prev() methods (Not all of them. It depends on where in the TransactionStateOrder you are inserting)
+ */
 public enum TransactionStateOrder {
         PAYMENT("payment") {
             @Override

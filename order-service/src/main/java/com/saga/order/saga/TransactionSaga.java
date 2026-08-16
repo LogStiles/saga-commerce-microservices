@@ -28,6 +28,11 @@ import static com.saga.order.framework.TransactionStepStatus.COMPENSATED;
 import static com.saga.order.framework.TransactionStepStatus.COMPENSATING;
 import static com.saga.order.framework.TransactionStepStatus.FAILED;
 
+/**
+ * TransactionSaga orchestrates the steps in a transaction with a saga design pattern.
+ * Determines the health of the overall saga
+ * Publishes events asking for transaction steps to be started or compensated for to Spring's ApplicationEventPublisher
+ */
 public final class TransactionSaga extends Transaction {
     private final ApplicationEventPublisher eventPublisher;
     private final Orders orders;
@@ -44,6 +49,7 @@ public final class TransactionSaga extends Transaction {
         advance();
     }
 
+    // Invoked when KafkaOrderConsumer receives a message from the property referenced in @KafkaListener kafka.topic.saga.payment.inbox.events, handled by OrderPlacementEventHandler
     public void onPaymentEvent(UUID eventId, PaymentEvent payload) {
         ensureProcessed(eventId, () -> {
             onStepEvent(TransactionStateOrder.PAYMENT.topic, payload.status().toTransactionStepStatus());
@@ -51,6 +57,7 @@ public final class TransactionSaga extends Transaction {
         });
     }
 
+    // Invoked when KafkaOrderConsumer receives a message from the property referenced in @KafkaListener kafka.topic.saga.inventory.inbox.events, handled by OrderPlacementEventHandler
     public void onInventoryEvent(UUID eventId, InventoryEvent payload) { 
         ensureProcessed(eventId, () -> {
             onStepEvent(TransactionStateOrder.INVENTORY.topic, payload.status().toTransactionStepStatus());
@@ -58,6 +65,10 @@ public final class TransactionSaga extends Transaction {
         });
     }
 
+    /**
+     * Checks if the transaction's associated order has either SUCCEEDED or FAILED based on the TransactionState
+     * No else statement means that all orders remain PENDING until the order is completed
+     */
     private void updateOrderStatus() {
         var order = orders.findById(new Order.OrderId(getOrderId())).orElseThrow(RuntimeException::new);
 
@@ -72,6 +83,12 @@ public final class TransactionSaga extends Transaction {
         return UUID.fromString(state.getPayload().get("orderId").asText());
     }
 
+    /**
+     * The saga orchestration works by moving along a 1-D axis of steps each transaction must take
+     * It moves forward on the axis on the happy path and backwards when something fails to request compensating transactions
+     * @param step Represents what step the saga is on
+     * @param status Represents the status of the step (STARTED, FAILED, SUCCEEDED, COMPENSATING, COMPENSATED)
+     */
     private void onStepEvent(String step, TransactionStepStatus status) {
         state.updateStepStatus(step, status);
 
@@ -84,9 +101,12 @@ public final class TransactionSaga extends Transaction {
         state.advanceTransactionStatus();
     }
 
+    /*
+        Moves the saga state system along the happy path
+    */
     private void advance() {
         var next = TransactionStateOrder.next(state.getCurrentStep());
-        if (next == null) {
+        if (next == null) { //if next is null we've reached the end of the happy path
             state.setCurrentStep(null);
             return;
         }
@@ -97,9 +117,13 @@ public final class TransactionSaga extends Transaction {
         state.setCurrentStep(next.topic);
     }
 
+    /*
+        goBack() is called when the current step has either had a non-recoverable failure or has finished compensating 
+        Something went wrong and we have to perform compensating transactions for previous successful steps
+    */
     private void goBack() {
         var prev = TransactionStateOrder.prev(state.getCurrentStep());
-        if (prev == null) {
+        if (prev == null) { // if prev is null we are at the beginning and there are no more compensating transactions to perform
             state.setCurrentStep(null);
             return;
         }

@@ -29,10 +29,19 @@ import java.util.LinkedHashMap;
 
 import lombok.Setter;
 
+/**
+ * KafkaConfig serves multiple purposes.
+ * It creates our two payment-service's Kafka topics using properties defined in application.properties.
+ * It builds the consumer pipeline used by PaymentInboxEventConsumer to handle incoming Payment objects.
+ * It builds the DLT pipeline with the beans deadLetterKafkaTemplate and kafkaErrorHandler.
+ */
 @Configuration
 @EnableKafka
 public class KafkaConfig {
 
+    /**
+     * KafkaTopic is an inner class that encapsulates the properties of our kafka topics
+     */
     @Setter
     private static class KafkaTopic {
         private String name;
@@ -41,17 +50,18 @@ public class KafkaConfig {
     }
 
     @Bean
-    @ConfigurationProperties(prefix = "kafka.topic.inbox.events")
+    @ConfigurationProperties(prefix = "kafka.topic.inbox.events") //prefix refers to a property in application.properties
     KafkaTopic paymentInboxTopicProps() {
-        return new KafkaTopic();
+        return new KafkaTopic(); //use Lombok @Setter to populate the fields of the KafkaTopic with values defined in application.properties
     }
 
     @Bean
-    @ConfigurationProperties(prefix = "kafka.topic.outbox.events")
+    @ConfigurationProperties(prefix = "kafka.topic.outbox.events") //prefix refers to a property in application.properties
     KafkaTopic paymentOutboxTopicProps() {
-        return new KafkaTopic();
+        return new KafkaTopic(); //use Lombok @Setter to populate the fields of the KafkaTopic with values defined in application.properties
     }
 
+    //topics are auto-created by Spring Kafka's KafkaAdmin detecting NewTopic and @Bean
     @Bean
     NewTopic paymentInboxTopic() {
         var props = paymentInboxTopicProps();
@@ -64,9 +74,11 @@ public class KafkaConfig {
         return new NewTopic(props.name, props.partitions, props.replicas);
     }
 
+    //ErrorHandlingDeserializer prevents malformed/garbage Kafka messages from crashing the service
+    //Errors are handled by our kafkaErrorHandler @Bean found at the bottom of the class
     @Bean
     ConsumerFactory<String, Payment> consumerFactory(KafkaProperties props) {
-        var valueDeserializer = new ErrorHandlingDeserializer<>(new JacksonJsonDeserializer<>(Payment.class, false));
+        var valueDeserializer = new ErrorHandlingDeserializer<>(new JacksonJsonDeserializer<>(Payment.class, false)); //false means we always deserialize into Payment.class and ignore type-info headers
         var keyDeserializer = new ErrorHandlingDeserializer<>(new StringDeserializer());
         return new DefaultKafkaConsumerFactory<>(props.buildConsumerProperties(), keyDeserializer, valueDeserializer);
     }
@@ -81,10 +93,12 @@ public class KafkaConfig {
         return factory;
     }
 
-    // A failed *deserialization* recovers the raw bytes, but a failed *listener* recovers the
-    // already-deserialized object, so the DLT producer has to handle both. byte[] is matched
-    // first; anything else falls through to JSON. A byte[]-only template throws
-    // ClassCastException on listener failures, leaving the record stuck in an endless retry.
+    /**
+     * A failed *deserialization* recovers the raw bytes, but a failed *listener* recovers the
+     *  already-deserialized object, so the DLT producer has to handle both. byte[] is matched
+     * first; anything else falls through to JSON. A byte[]-only template throws
+     * ClassCastException on listener failures, leaving the record stuck in an endless retry.
+     */
     @Bean
     KafkaTemplate<String, Object> deadLetterKafkaTemplate(KafkaProperties props) {
         var delegates = new LinkedHashMap<Class<?>, Serializer<?>>();
@@ -97,6 +111,10 @@ public class KafkaConfig {
         return new KafkaTemplate<>(producerFactory);
     }
 
+    //Handles errors for the ConcurrentKafkaListenerContainer. A safety net not just for Kafka-related errors, but any kind of exception thrown in its call-stack
+    //Retries twice before passing it off to DLT handling.
+    //Bounded retries prevent the consumer's poll loop from going over max.poll.interval.ms, going over would stop polling and the broker would think the consumer is dead, which would cause endless rebalances
+    //Retry budget only applies to listener failures, parsing errors on malformed jsons are automatically sent to DeadLetterPublishingRecoverer
     @Bean
     DefaultErrorHandler kafkaErrorHandler(KafkaTemplate<String, Object> deadLetterKafkaTemplate) {
         var recoverer = new DeadLetterPublishingRecoverer(deadLetterKafkaTemplate);

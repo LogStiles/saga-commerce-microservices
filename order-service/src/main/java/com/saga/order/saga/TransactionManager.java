@@ -13,6 +13,10 @@ import com.saga.order.framework.TransactionState;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * TransactionManager initializes transactions with begin()
+ * Owns both the table of user orders and the table that has the transactions associated with those orders 
+ */
 // Explicit bean name: the default ("transactionManager") collides with the
 // PlatformTransactionManager that HibernateJpaConfiguration auto-configures.
 @Component("sagaTransactionManager")
@@ -25,7 +29,8 @@ public class TransactionManager {
     public void begin(Order order) {
         var payload = order.toTransactionPayload().put("type", Transaction.PayloadType.REQUEST.name());
         var transactionState = new TransactionState("order", payload);
-        entityManager.persist(transactionState);
+        entityManager.persist(transactionState); // persist the transactionState because we discard it at the end of begin(Order order)
+        // the transaction starts up again once KafkaOrderConsumer receives messages and transactionState will pulled from the db by OrderPlacementEventHandler
 
         var transaction = new TransactionSaga(eventPublisher, entityManager, orders, transactionState);
         transaction.init();
@@ -33,7 +38,7 @@ public class TransactionManager {
 
     public TransactionSaga find(UUID transactionId) {
         var state = entityManager.find(TransactionState.class, transactionId);
-        if (state == null) {
+        if (state == null) { // received an unknown transactionId, not found in table
             return null;
         }
 
