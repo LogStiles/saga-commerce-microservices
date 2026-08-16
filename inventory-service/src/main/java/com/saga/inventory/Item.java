@@ -12,6 +12,7 @@ import java.time.Instant;
  * Item contains the metadata and relevant business information for an item
  */
 @Entity
+// see EventLog.java in inventory-service for why this must be explicit and lowercase
 @Table(name = "inventory")
 @NoArgsConstructor(access = PRIVATE, force = true)
 public class Item {

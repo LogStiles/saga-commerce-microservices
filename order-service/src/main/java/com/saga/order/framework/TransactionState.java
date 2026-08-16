@@ -29,6 +29,7 @@ import lombok.NoArgsConstructor;
  * TransactionState holds the metadata of a multi-step TransactionSaga including a unique identifier, the location of the transaction in the state machine, and the health of the transaction
  */
 @Entity
+// see EventLog.java in inventory-service for why this must be explicit and lowercase
 @Table(name = "transactionstate")
 @NoArgsConstructor(access = PRIVATE, force = true)
 public class TransactionState {

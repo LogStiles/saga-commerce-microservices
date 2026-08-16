@@ -14,6 +14,7 @@ import static lombok.AccessLevel.PRIVATE;
  * Payment contains the metadata and relevant business information for a payment
  */
 @Entity
+// see EventLog.java in inventory-service for why this must be explicit and lowercase
 @Table(name="payment")
 @NoArgsConstructor(access = PRIVATE, force = true)
 @ToString

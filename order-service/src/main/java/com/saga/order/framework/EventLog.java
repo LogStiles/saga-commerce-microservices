@@ -16,6 +16,7 @@ import static lombok.AccessLevel.PRIVATE;
  * Caveat: Our idempotency works by checking for the UUID on the Outbox row, so if the OutboxEventDispatcher accidentally created an outbox row for the same event twice, that event would have two different UUIDs and be processed twice
  */
 @Entity
+// see EventLog.java in inventory-service for why this must be explicit and lowercase
 @Table(name = "eventlog")
 @NoArgsConstructor(access = PRIVATE, force = true)
 public class EventLog {

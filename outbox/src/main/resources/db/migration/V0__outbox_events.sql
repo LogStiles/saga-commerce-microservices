@@ -1,3 +1,6 @@
+-- Every microservice gets the outbox as a dependency in their pom.xml.
+-- By defining the migration schema in outbox jar we can have changes in outbox automatically roll across all services that use it.
+-- Flyway scans the whole classpath for migration files, and so it will find the V0__outbox_events.sql inside the outbox jar even if it's not in the service's resource folder.
 CREATE TABLE IF NOT EXISTS outboxevent
 (
     id            UUID PRIMARY KEY      DEFAULT gen_random_uuid(),

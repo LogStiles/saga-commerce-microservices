@@ -11,6 +11,7 @@ import java.time.Instant;
 import static lombok.AccessLevel.PRIVATE;
 
 @Entity
+// see EventLog.java in inventory-service for why this must be explicit and lowercase
 @Table(name = "eventlog")
 @NoArgsConstructor(access = PRIVATE, force = true)
 public class EventLog {

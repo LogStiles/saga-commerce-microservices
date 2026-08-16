@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
  * 
  */
 @Entity
+// see EventLog.java in inventory-service for why this must be explicit and lowercase
 @Table(name = "outboxevent")
 @NoArgsConstructor(access = PRIVATE)
 public class Outbox implements Serializable {

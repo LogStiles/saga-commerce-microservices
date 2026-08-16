@@ -22,6 +22,12 @@ import static lombok.AccessLevel.PRIVATE;
  * Contains a unique identifier so it can be stored on the orders table, the status of the order, and information about the order submitted by the consumer
  */
 @Entity
+/**
+ * The table cannot be named order because order is a reserved keyword in SQL, meaning all queries to a table named order would fail to parse.
+ * We could technically have quotes around "order" in queries to get around this, but Hibernate doesn't quote by default and would generate broken queries.
+ * Orders is an intuitive replacement that gets around this hard constraint.
+ */ 
+// see EventLog.java in inventory-service for why this must be explicit and lowercase
 @Table(name = "orders")
 @NoArgsConstructor(access = PRIVATE, force = true)
 public class Order {
