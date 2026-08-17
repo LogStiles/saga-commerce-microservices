@@ -67,6 +67,10 @@ curl -s http://localhost:8083/connectors
 Seeded stock (`inventory-service/.../V99__demodata.sql`): item **1** (25 in stock), item **2**
 (100), item **3** (0 — always out of stock). Payment **fails** for any card ending in `1234`.
 
+The three scenarios below are also automated in `e2e-tests` — it drives the same requests against
+a live `docker compose up --build` stack and asserts on the resulting saga/compensation state.
+Run it with `./mvnw -pl e2e-tests verify -DskipITs=false` once the stack is up.
+
 **Happy path** — valid card, in-stock item → order `SUCCEED`:
 
 ```bash
