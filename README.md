@@ -1,5 +1,7 @@
 # saga-commerce-microservices
 
+[![build](https://github.com/LogStiles/saga-commerce-microservices/actions/workflows/build.yml/badge.svg)](https://github.com/LogStiles/saga-commerce-microservices/actions/workflows/build.yml)
+
 An event-driven e-commerce order-processing backend implementing the **Saga orchestration
 pattern**. Placing an order triggers a saga across services — **payment** then **inventory** —
 coordinated by the `order-service` orchestrator. If a step fails (invalid credit card, or not
